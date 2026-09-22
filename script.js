@@ -1151,8 +1151,11 @@ function checkRussianDrawing() {
     // Apply active items on load
     shopItems.forEach(item => {
         if (activeItems[item.id]) {
-            if (item.id === 'item1' && localStorage.getItem('customBgColor')) {
-                document.body.style.background = `linear-gradient(135deg, ${localStorage.getItem('customBgColor')}, ${localStorage.getItem('customBgColor')})`;
+            if (item.id === 'item1') {
+                const customBgColor = localStorage.getItem('customBgColor');
+                if (customBgColor) {
+                    document.body.style.background = `linear-gradient(135deg, ${customBgColor}, ${customBgColor})`;
+                }
             } else {
                 applyItem(item);
             }
