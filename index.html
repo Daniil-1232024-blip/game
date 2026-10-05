@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="true">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Образовательная игра">
+    <meta name="theme-color" content="#4a90e2">
+    <title>Образовательная игра для малышей</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="coins-badge global-coins-badge" aria-label="Баланс монет">
+        <svg class="ui-icon coin-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="8"></circle><path d="M12 7v10M9.5 9.5c0-1 5-1 5 0s-5 1-5 2.5 5 1.5 5 2.5-5 1-5 0"></path>
+        </svg>
+        <span id="coins-balance">0</span>
+    </div>
+    <div class="menu-content" style="display:none;">
+        <select id="gameSelect">
+            <option value="math">Математика</option>
+            <option value="russian">Русский язык</option>
+        </select>
+        <select id="modeSelect">
+            <option value="sticks">Счётные палочки</option>
+            <option value="examples" selected>Примеры</option>
+        </select>
+        <select id="ruModeSelect">
+            <option value="letters">Буквы</option>
+            <option value="words" selected>Пропущенное</option>
+            <option value="copy">Слова</option>
+            <option value="type">Написать букву</option>
+        </select>
+        <select id="difficultySelect">
+            <option value="easy">Лёгкая</option>
+            <option value="normal" selected>Обычная</option>
+            <option value="hard">Сложная</option>
+        </select>
+        <select id="opSelect">
+            <option value="add" selected>Сложение</option>
+            <option value="subtract">Вычитание</option>
+            <option value="multiply">Умножение</option>
+            <option value="divide">Деление</option>
+            <option value="mixed">Смешанный режим</option>
+        </select>
+    </div>
+
+    <div id="levels-screen" class="screen" style="display:none;">
+        <div class="container levels-container">
+            <div class="levels-header">
+                <h1>Карта приключений</h1>
+            </div>
+            <section class="campaign-panel" aria-labelledby="campaign-title">
+                <h2 id="campaign-title">Твоя дорога к победе</h2>
+                <p class="campaign-intro">Пройди уровень, чтобы открыть следующий!</p>
+                <div id="campaign-summary" class="campaign-summary" aria-live="polite"></div>
+                <div id="level-map" class="level-map" aria-label="Уровни игры"></div>
+            </section>
+        </div>
+    </div>
+
+    <div id="profile-screen" class="screen" style="display:none;">
+        <div class="container profile-container">
+            <h1>Профиль игрока</h1>
+            <section class="profile-card" aria-labelledby="profile-name">
+                <div class="profile-avatar" aria-hidden="true">🧑‍🚀</div>
+                <h2 id="profile-name"></h2>
+                <form id="profile-name-form" class="profile-name-form">
+                    <label for="profile-name-input">Имя игрока</label>
+                    <div class="profile-name-controls">
+                        <input id="profile-name-input" type="text" maxlength="24" autocomplete="nickname" required>
+                        <button type="submit">Сохранить</button>
+                    </div>
+                    <p id="profile-name-feedback" class="profile-feedback" aria-live="polite"></p>
+                </form>
+            </section>
+            <section class="profile-actions" aria-label="Действия игрока">
+                <button id="dailyBonusBtn" class="menu-shop-btn" aria-label="Ежедневный бонус" title="Ежедневный бонус">
+                    <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h16v11H4zM3 6h18v3H3zM12 6v14M12 6c-4 0-6-1-6-3 0-1.5 2-2 3.5-1C11 3 12 6 12 6Zm0 0c4 0 6-1 6-3 0-1.5-2-2-3.5-1C13 3 12 6 12 6Z"></path></svg>
+                    <span class="menu-action-label">Ежедневный приз</span>
+                </button>
+                <button id="shopBtn" class="menu-shop-btn" aria-label="Магазин" title="Магазин">
+                    <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16l-1 12H5L4 8Zm3 0a5 5 0 0 1 10 0M8 12h.01M16 12h.01"></path></svg>
+                    <span class="menu-action-label">Магазин</span>
+                </button>
+                <button id="exitBtn" class="menu-shop-btn exit-menu-btn" aria-label="Выход" title="Выход">
+                    <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4H5v16h5m5-4 4-4-4-4m4 4H9"></path></svg>
+                    <span class="menu-action-label">Выход</span>
+                </button>
+            </section>
+            <section class="profile-stats" aria-label="Мои достижения">
+                <div class="profile-stat"><strong id="profile-completed">0</strong><span>Пройдено уровней</span></div>
+                <div class="profile-stat"><strong id="profile-stars">0</strong><span>Собрано звёзд</span></div>
+                <div class="profile-stat"><strong id="profile-coins">0</strong><span>Монет</span></div>
+            </section>
+            <section class="theme-settings" aria-labelledby="theme-title">
+                <div>
+                    <h2 id="theme-title">Оформление</h2>
+                    <p>Бесплатная тема для игры</p>
+                </div>
+                <button id="themeToggleBtn" class="theme-toggle" type="button" aria-pressed="false">
+                    <span class="theme-toggle-icon" aria-hidden="true">☀️</span>
+                    <span class="theme-toggle-label">Светлая тема</span>
+                </button>
+            </section>
+        </div>
+    </div>
+
+    <div id="exit-screen" class="screen" style="display:none;">
+        <div class="container exit-container">
+            <div class="exit-icon" aria-hidden="true">👋</div>
+            <h1>До новых встреч!</h1>
+            <p>Если вкладка не закрылась автоматически, закрой её обычным способом.</p>
+            <button id="returnFromExitBtn" class="open-levels-btn" type="button">Вернуться в игру</button>
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen" class="screen" style="display:none;">
+        <div class="container">
+            <div class="game-header">
+                <button id="backBtn" class="back-button">← Карта</button>
+                <h1 id="level-title">Уровень</h1>
+            </div>
+            <div id="game">
+                <p id="level-description" class="level-description"></p>
+                <div class="level-progress-wrap">
+                    <div id="level-progress-label" class="level-progress-label"></div>
+                    <div class="level-progress-track" role="progressbar" aria-label="Прогресс уровня" aria-valuemin="0" aria-valuemax="5" aria-valuenow="0">
+                        <div id="level-progress-bar" class="level-progress-bar"></div>
+                    </div>
+                </div>
+                <div id="question"></div>
+                <div id="sticks-container" style="display:none; text-align:center; margin:20px 0;"></div>
+                <div id="russian-input-area" style="display:none; margin:20px 0;">
+                    <canvas id="letterCanvas" width="300" height="300" style="width:100%; max-width:300px; aspect-ratio:1; border:3px solid #4a90e2; border-radius:15px; cursor:crosshair; display:none; touch-action:none; background:white;"></canvas>
+                    <input type="text" id="russianTextInput" placeholder="Введите букву или слово" maxlength="50" style="padding:15px; font-size:1.5rem; border:3px solid #4a90e2; border-radius:15px; width:100%; text-align:center; display:none; touch-action:manipulation;">
+                    <div id="word-with-gap" style="font-size:2rem; margin:20px 0; letter-spacing:5px;"></div>
+                </div>
+                <div id="options"></div>
+                <div id="feedback"></div>
+                <div id="score">Счёт: 0</div>
+                <div id="timer">Время: 20</div>
+                <button id="nextBtn" style="display:none;">Следующий вопрос</button>
+            </div>
+            <div id="confetti-container"></div>
+        </div>
+        <div id="stars"></div>
+    </div>
+
+    <!-- Shop Screen -->
+    <div id="shop-screen" class="screen" style="display:none;">
+        <div class="container">
+            <div class="shop-header">
+                <h1>🛍️ Магазин</h1>
+                <button id="closeShopBtn" class="close-shop-btn">✕</button>
+            </div>
+            <div id="shop-items"></div>
+        </div>
+    </div>
+
+    <div id="color-picker-container" role="dialog" aria-label="Выбор цвета фона">
+        <h2>Выберите цвет фона</h2>
+        <div id="colorPicker" class="color-picker"></div>
+    </div>
+
+    <nav id="bottom-nav" class="bottom-nav" aria-label="Основная навигация" style="display:none;">
+        <button class="bottom-nav-item active" type="button" data-tab="levels" aria-current="page">
+            <span class="bottom-nav-icon" aria-hidden="true">🗺️</span>
+            <span>Уровни</span>
+        </button>
+        <button class="bottom-nav-item" type="button" data-tab="profile">
+            <span class="bottom-nav-icon" aria-hidden="true">👤</span>
+            <span>Профиль</span>
+        </button>
+    </nav>
+
+    <div id="name-prompt" class="name-prompt-backdrop" style="display:none;">
+        <form id="name-prompt-form" class="name-prompt-card" role="dialog" aria-modal="true" aria-labelledby="name-prompt-title">
+            <div class="name-prompt-icon" aria-hidden="true">👋</div>
+            <h2 id="name-prompt-title">Как тебя зовут?</h2>
+            <p>Напиши своё имя, чтобы начать приключение!</p>
+            <label for="player-name-input">Твоё имя</label>
+            <input id="player-name-input" name="name" type="text" maxlength="24" autocomplete="nickname" placeholder="Например, Маша" required>
+            <p id="name-prompt-feedback" class="profile-feedback" aria-live="polite"></p>
+            <button class="open-levels-btn" type="submit">Начать игру</button>
+        </form>
+    </div>
+
+    <script src="script.js"></script>
+    <script src="daily-bonus.js"></script>
+</body>
+</html>
