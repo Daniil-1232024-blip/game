@@ -73,14 +73,7 @@
             const lastDate = localStorage.getItem(bonusKey);
             let streak = getStreak();
             streak = lastDate === getYesterday() ? Math.min(streak + 1, 7) : 1;
-            let activeItems = {};
-            try {
-                activeItems = JSON.parse(localStorage.getItem('activeItems') || '{}');
-            } catch {
-                activeItems = {};
-            }
-            const multiplier = activeItems.item7 ? 2 : 1;
-            const coins = getCoins() + rewards[streak - 1] * multiplier;
+            const coins = getCoins() + rewards[streak - 1];
             localStorage.setItem('coins', String(coins));
             localStorage.setItem(bonusKey, getToday());
             localStorage.setItem(streakKey, String(streak));

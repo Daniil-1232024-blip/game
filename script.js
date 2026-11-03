@@ -53,6 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const levelProgressLabel = document.getElementById('level-progress-label');
     const levelProgressTrack = document.querySelector('.level-progress-track');
     const levelProgressBar = document.getElementById('level-progress-bar');
+    const gameAbilities = document.getElementById('game-abilities');
 
     // Game elements
     const sticksContainer = document.getElementById('sticks-container');
@@ -75,6 +76,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let levelComplete = false;
     let transitionTimeout = null;
     let selectedMapSubject = 'math';
+    let mistakeShieldArmed = false;
+    let bonusStarArmed = false;
+    let bonusCoinsArmed = false;
     const questionsPerLevel = 5;
     function readStoredJson(key, fallback) {
         try {
@@ -239,6 +243,9 @@ document.addEventListener('DOMContentLoaded', () => {
         levelMistakes = 0;
         correctStreak = 0;
         levelComplete = false;
+        mistakeShieldArmed = false;
+        bonusStarArmed = false;
+        bonusCoinsArmed = false;
         levelTitle.textContent = `${track.title} · уровень ${trackIndex + 1}`;
         document.getElementById('level-description').textContent = level.description;
         nextBtn.style.display = 'none';
@@ -268,25 +275,24 @@ document.addEventListener('DOMContentLoaded', () => {
         updateCoinsBadge();
         renderProfile();
     });
-    let purchasedItems = readStoredJson('purchasedItems', []);
-    let activeItems = readStoredJson('activeItems', {});
-
-    if (!Array.isArray(purchasedItems)) purchasedItems = [];
-    if (!activeItems || typeof activeItems !== 'object' || Array.isArray(activeItems)) {
-        activeItems = {};
-    }
-
-    // Shop items
+    // One-use abilities sold by the shop.
     const shopItems = [
-        { id: 'item1', name: 'Новый фон', icon: '🎨', price: 50 },
-        { id: 'item2', name: 'Звуки', icon: '🔊', price: 30 },
-        { id: 'item3', name: 'Темная тема', icon: '🌙', price: 40 },
-        { id: 'item4', name: 'Бонус времени', icon: '⏱️', price: 60 },
-        { id: 'item5', name: 'Морская тема', icon: '🌊', price: 45 },
-        { id: 'item6', name: 'Неоновая тема', icon: '💜', price: 70 },
-        { id: 'item7', name: 'Двойные монеты', icon: '✖️2', price: 90 },
-        { id: 'item8', name: 'Радужные звёзды', icon: '🌈', price: 55 }
+        { id: 'fifty-fifty', name: 'Ответы 50/50', description: 'Убирает два неверных варианта ответа.', icon: '✂️', price: 20 },
+        { id: 'extra-time', name: 'Больше времени', description: 'Добавляет 30 секунд к текущему заданию.', icon: '⏱️', price: 15 },
+        { id: 'skip-level', name: 'Пропуск уровня', description: 'Завершает уровень без награды за монеты.', icon: '⏭️', price: 60 },
+        { id: 'mistake-shield', name: 'Щит от ошибки', description: 'При первой ошибке пропускает задание без штрафа.', icon: '🛡️', price: 25 },
+        { id: 'bonus-star', name: 'Звёздный бонус', description: 'Даёт одну дополнительную звезду за уровень.', icon: '⭐', price: 35 },
+        { id: 'bonus-coins', name: 'Монетный бонус', description: 'Добавляет 5 монет за следующий правильный ответ.', icon: '🪙', price: 20 }
     ];
+    let abilityInventory = readStoredJson('mathGameAbilityInventory', {});
+    if (!abilityInventory || typeof abilityInventory !== 'object' || Array.isArray(abilityInventory)) {
+        abilityInventory = {};
+    }
+    abilityInventory = Object.fromEntries(
+        shopItems
+            .map(item => [item.id, abilityInventory[item.id]])
+            .filter(([, count]) => Number.isSafeInteger(count) && count > 0)
+    );
 
     // Russian language data
     const russianLetters = ['А', 'Б', 'В', 'Г', 'Д', 'Е', 'Ё', 'Ж', 'З', 'И', 'Й', 'К', 'Л', 'М', 'Н', 'О', 'П', 'Р', 'С', 'Т', 'У', 'Ф', 'Х', 'Ц', 'Ч', 'Ш', 'Щ', 'Ъ', 'Ы', 'Ь', 'Э', 'Ю', 'Я'];
@@ -473,50 +479,6 @@ document.addEventListener('DOMContentLoaded', () => {
         { q: "Во что превращается вода при заморозке?", options: ["Пар", "Лёд", "Снег", "Камень"], answer: 1 }
     ];
 
-    // Color picker colors
-    const bgColors = [
-        '#fce4ec', '#f8bbd0', '#f48fb1', '#f06292',
-        '#e91e63', '#c2185b', '#ad1457', '#880e4f',
-        '#e3f2fd', '#bbdefb', '#90caf9', '#64b5f6',
-        '#2196f3', '#1976d2', '#1565c0', '#0d47a1',
-        '#e8f5e9', '#c8e6c9', '#a5d6a7', '#81c784',
-        '#66bb6a', '#43a047', '#388e3c', '#1b5e20',
-        '#fff3e0', '#ffe0b2', '#ffcc80', '#ffb74d',
-        '#ffa726', '#fb8c00', '#f57c00', '#e65100'
-    ];
-
-    function showColorPicker() {
-        const pickerContainer = document.getElementById('color-picker-container');
-        const colorPicker = document.getElementById('colorPicker');
-
-        colorPicker.innerHTML = '';
-        bgColors.forEach(color => {
-            const colorBox = document.createElement('div');
-            colorBox.className = 'color-option';
-            colorBox.style.backgroundColor = color;
-            colorBox.addEventListener('click', (e) => {
-                e.stopPropagation();
-                selectColor(color);
-            });
-            colorPicker.appendChild(colorBox);
-        });
-
-        pickerContainer.style.display = 'block';
-    }
-
-    function selectColor(color) {
-        localStorage.setItem('customBgColor', color);
-        document.body.style.background = `linear-gradient(135deg, ${color}, ${color})`;
-        hideColorPicker();
-    }
-
-    function hideColorPicker() {
-        const pickerContainer = document.getElementById('color-picker-container');
-        if (pickerContainer) {
-            pickerContainer.style.display = 'none';
-        }
-    }
-
     // Initialize stars
     function initStars() {
         starsContainer.innerHTML = '';
@@ -538,16 +500,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function completeLevel() {
+    function completeLevel({ skipped = false } = {}) {
+        if (levelComplete) return;
         clearTimer();
         clearTimeout(window.russianCheckTimeout);
         levelComplete = true;
         const levelNumber = currentLevelIndex + 1;
-        const starsEarned = levelMistakes === 0 ? 3 : levelMistakes <= 2 ? 2 : 1;
         const previousResult = campaignProgress.completed[levelNumber];
+        const baseStars = levelMistakes === 0 ? 3 : levelMistakes <= 2 ? 2 : 1;
+        const earnedStars = skipped ? 1 : Math.min(3, baseStars + Number(bonusStarArmed));
+        const starsEarned = Math.max(previousResult ? previousResult.stars : 0, earnedStars);
         campaignProgress.completed[levelNumber] = {
-            stars: Math.max(previousResult ? previousResult.stars : 0, starsEarned)
+            stars: starsEarned
         };
+        bonusStarArmed = false;
+        bonusCoinsArmed = false;
         campaignProgress.unlocked = Math.max(
             campaignProgress.unlocked,
             Math.min(levelNumber + 1, campaignLevels.length)
@@ -560,12 +527,12 @@ document.addEventListener('DOMContentLoaded', () => {
         );
         saveCampaignProgress();
 
-        const reward = previousResult ? 0 : (activeItems['item7'] ? 20 : 10);
+        const reward = skipped || previousResult ? 0 : 10;
         coins += reward;
         localStorage.setItem('coins', String(coins));
         updateCoinsBadge();
         const finalLevel = trackIndex === track.levels.length - 1;
-        feedbackEl.textContent = `Уровень пройден! ${'★'.repeat(starsEarned)}${'☆'.repeat(3 - starsEarned)}${reward ? ` · +${reward} монет` : ''}`;
+        feedbackEl.textContent = `${skipped ? 'Уровень пропущен!' : 'Уровень пройден!'} ${'★'.repeat(starsEarned)}${'☆'.repeat(3 - starsEarned)}${reward ? ` · +${reward} монет` : ''}`;
         feedbackEl.style.color = '#2e7d32';
         renderProfile();
         nextBtn.textContent = finalLevel ? 'К карте предметов' : 'Следующий уровень';
@@ -573,6 +540,7 @@ document.addEventListener('DOMContentLoaded', () => {
         nextBtn.style.display = 'block';
         document.querySelectorAll('.option').forEach(o => o.disabled = true);
         disableRussianInput();
+        renderGameAbilities();
         if (finalLevel) launchCoins();
         launchConfetti();
         playSound('correct');
@@ -580,19 +548,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Shop functions
     function showShop() {
-        hideColorPicker();
         shopReturnTab = levelsScreen.style.display !== 'none' ? 'levels' : 'profile';
         levelsScreen.style.display = 'none';
         profileScreen.style.display = 'none';
         exitScreen.style.display = 'none';
         bottomNav.style.display = 'none';
         shopScreen.style.display = 'block';
+        document.getElementById('shop-feedback').textContent = '';
         renderShopItems();
         updateCoinsDisplay();
     }
 
     function hideShop() {
-        hideColorPicker();
         shopScreen.style.display = 'none';
         if (shopReturnTab === 'levels') showLevels();
         else showProfile();
@@ -606,112 +573,129 @@ document.addEventListener('DOMContentLoaded', () => {
         const shopItemsContainer = document.getElementById('shop-items');
         shopItemsContainer.innerHTML = '';
         shopItems.forEach(item => {
-            const isPurchased = purchasedItems.includes(item.id);
-            const isActive = activeItems[item.id];
             const itemEl = document.createElement('div');
             itemEl.className = 'shop-item';
             itemEl.innerHTML = `
-                <div class="shop-item-icon">${item.icon}</div>
-                <div class="shop-item-name">${item.name}</div>
-                <div class="shop-item-price">💰 ${item.price}</div>
-                <div class="shop-item-buttons">
-                    ${!isPurchased ?
-                        `<button class="shop-item-btn buy-btn" data-id="${item.id}">Купить</button>` :
-                        `<button class="shop-item-btn apply-btn ${isActive ? 'active' : ''}" data-id="${item.id}">
-                            ${isActive ? '✓ Применено' : 'Применить'}
-                        </button>`
-                    }
-                </div>
+                <div class="shop-item-icon" aria-hidden="true">${item.icon}</div>
+                <div class="shop-item-name">${item.name} <span class="shop-item-use">(x1)</span></div>
+                <p class="shop-item-description">${item.description}</p>
+                <div class="shop-item-stock">В запасе: ${abilityInventory[item.id] || 0}</div>
+                <div class="shop-item-price">🪙 ${item.price}</div>
+                <div class="shop-item-buttons"><button class="shop-item-btn buy-btn" type="button">Купить x1</button></div>
             `;
             shopItemsContainer.appendChild(itemEl);
 
             const btn = itemEl.querySelector('button');
-            if (!isPurchased) {
-                btn.addEventListener('click', () => buyItem(item));
-            } else {
-                btn.addEventListener('click', () => toggleItem(item));
-            }
+            btn.disabled = coins < item.price;
+            btn.title = btn.disabled ? 'Не хватает монет' : `Купить одну способность за ${item.price} монет`;
+            btn.addEventListener('click', () => buyItem(item));
         });
     }
 
     function buyItem(item) {
-        if (coins >= item.price && !purchasedItems.includes(item.id)) {
-            coins -= item.price;
-            purchasedItems.push(item.id);
-            localStorage.setItem('coins', coins);
-            localStorage.setItem('purchasedItems', JSON.stringify(purchasedItems));
-            updateCoinsBadge();
-            renderShopItems();
-            updateCoinsDisplay();
-            playSound('correct');
+        if (coins < item.price) {
+            document.getElementById('shop-feedback').textContent = 'Не хватает монет для покупки.';
+            return;
         }
-    }
-
-    function toggleItem(item) {
-        if (activeItems[item.id]) {
-            delete activeItems[item.id];
-        } else {
-            activeItems[item.id] = true;
-        }
-        localStorage.setItem('activeItems', JSON.stringify(activeItems));
-        applyItem(item);
+        coins -= item.price;
+        abilityInventory[item.id] = (abilityInventory[item.id] || 0) + 1;
+        localStorage.setItem('coins', String(coins));
+        saveAbilityInventory();
+        updateCoinsBadge();
+        shopFeedbackMessage(`Куплено: ${item.name} x1`);
         renderShopItems();
+        renderGameAbilities();
+        playSound('correct');
     }
 
-    function applyItem(item) {
-        playSound('correct');
-        switch(item.id) {
-            case 'item1': // Новый фон
-                if (activeItems['item1']) {
-                    showColorPicker();
-                } else {
-                    document.body.style.background = 'linear-gradient(135deg, #fff8e1, #e3f2fd)';
-                    localStorage.removeItem('customBgColor');
-                }
-                break;
-            case 'item2': // Звуки
-                // Звуки меняются автоматически в функции playSound()
-                break;
-            case 'item3': // Темная тема
-                if (activeItems['item3']) {
-                    document.body.style.background = 'linear-gradient(135deg, #1a1a1a, #2d2d2d)';
-                    document.querySelectorAll('.container').forEach(el => {
-                        el.style.background = 'rgba(45,45,45,0.95)';
-                        el.style.color = '#fff';
-                    });
-                } else {
-                    document.body.style.background = 'linear-gradient(135deg, #fff8e1, #e3f2fd)';
-                    document.querySelectorAll('.container').forEach(el => {
-                        el.style.background = 'rgba(255,255,255,0.95)';
-                        el.style.color = '#333';
-                    });
-                }
-                break;
-            case 'item4': // Бонус времени
-                // Будет применяться при генерации вопроса
-                break;
-            case 'item5': // Морская тема
-                if (activeItems['item5']) {
-                    document.body.style.background = 'linear-gradient(135deg, #dff8ff, #a7d8ff)';
-                    document.querySelectorAll('.container').forEach(el => {
-                        el.style.background = 'rgba(240, 252, 255, 0.96)';
-                        el.style.color = '#164e63';
-                    });
-                }
-                break;
-            case 'item6': // Неоновая тема
-                if (activeItems['item6']) {
-                    document.body.style.background = 'linear-gradient(135deg, #24103d, #102a43)';
-                    document.querySelectorAll('.container').forEach(el => {
-                        el.style.background = 'rgba(24, 20, 45, 0.96)';
-                        el.style.color = '#f4eaff';
-                    });
-                }
-                break;
-            case 'item8': // Радужные звёзды
-                document.body.classList.toggle('rainbow-stars', Boolean(activeItems['item8']));
-                break;
+    function shopFeedbackMessage(message) {
+        document.getElementById('shop-feedback').textContent = message;
+    }
+
+    function saveAbilityInventory() {
+        localStorage.setItem('mathGameAbilityInventory', JSON.stringify(abilityInventory));
+    }
+
+    function consumeAbility(abilityId) {
+        const count = abilityInventory[abilityId] || 0;
+        if (count < 1) return false;
+        if (count === 1) delete abilityInventory[abilityId];
+        else abilityInventory[abilityId] = count - 1;
+        saveAbilityInventory();
+        renderShopItems();
+        renderGameAbilities();
+        return true;
+    }
+
+    function renderGameAbilities() {
+        if (!gameAbilities) return;
+        gameAbilities.replaceChildren();
+        const isPlaying = gameScreen.style.display !== 'none' && !levelComplete;
+        const availableAbilities = shopItems.filter(item =>
+            isPlaying
+            && abilityInventory[item.id] > 0
+            && (item.id !== 'fifty-fifty'
+                || (gameSelect.value === 'math' && optionsEl.querySelectorAll('.option:not(:disabled)').length > 2))
+        );
+        gameAbilities.hidden = !availableAbilities.length && !mistakeShieldArmed && !bonusStarArmed && !bonusCoinsArmed;
+
+        availableAbilities.forEach(item => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'game-ability-btn';
+            button.textContent = `${item.icon} ${item.name} x${abilityInventory[item.id]}`;
+            button.addEventListener('click', () => useAbility(item.id));
+            gameAbilities.appendChild(button);
+        });
+
+        const armedEffects = [
+            mistakeShieldArmed ? '🛡️ Щит защитит от следующей ошибки.' : '',
+            bonusStarArmed ? '⭐ Звёздный бонус активен.' : '',
+            bonusCoinsArmed ? '🪙 Бонус +5 монет добавится за правильный ответ.' : ''
+        ].filter(Boolean);
+        armedEffects.forEach(message => {
+            const status = document.createElement('p');
+            status.className = 'game-ability-status';
+            status.textContent = message;
+            gameAbilities.appendChild(status);
+        });
+    }
+
+    function useAbility(abilityId) {
+        if (levelComplete || gameScreen.style.display === 'none') return;
+
+        if (abilityId === 'fifty-fifty') {
+            const availableOptions = [...optionsEl.querySelectorAll('.option:not(:disabled)')];
+            const wrongOptions = availableOptions
+                .filter(option => Number(option.textContent) !== currentAnswer);
+            const removeCount = Math.min(2, availableOptions.length - 2);
+            if (removeCount < 1 || wrongOptions.length < removeCount) return;
+            wrongOptions.sort(() => Math.random() - 0.5).slice(0, removeCount).forEach(option => option.remove());
+            if (consumeAbility(abilityId)) {
+                feedbackEl.textContent = 'Подсказка 50/50: осталось два варианта!';
+                feedbackEl.style.color = '#2e7d32';
+            }
+        } else if (abilityId === 'extra-time') {
+            if (!consumeAbility(abilityId)) return;
+            const secondsRemaining = timer + 30;
+            clearTimer();
+            startTimer(secondsRemaining);
+            feedbackEl.textContent = 'Добавлено 30 секунд!';
+            feedbackEl.style.color = '#2e7d32';
+        } else if (abilityId === 'skip-level') {
+            if (!consumeAbility(abilityId)) return;
+            completeLevel({ skipped: true });
+        } else if (abilityId === 'mistake-shield') {
+            if (!consumeAbility(abilityId)) return;
+            mistakeShieldArmed = true;
+        } else if (abilityId === 'bonus-star') {
+            if (!consumeAbility(abilityId)) return;
+            bonusStarArmed = true;
+        } else if (abilityId === 'bonus-coins') {
+            if (!consumeAbility(abilityId)) return;
+            bonusCoinsArmed = true;
         }
+        renderGameAbilities();
     }
 
     function updateCoinsBadge() {
@@ -738,10 +722,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Timer functions
     function startTimer(seconds) {
-        // Apply time bonus if item4 is active
-        if (activeItems['item4']) {
-            seconds = Math.floor(seconds * 1.5); // 50% больше времени
-        }
         timer = seconds;
         timerEl.textContent = `Время: ${timer}`;
         timerInterval = setInterval(() => {
@@ -780,45 +760,14 @@ document.addEventListener('DOMContentLoaded', () => {
     function playSound(type) {
         try {
             const ctx = new (window.AudioContext || window.webkitAudioContext)();
-
-            if (activeItems['item2']) {
-                // New sounds - using musical notes
-                if (type === 'correct') {
-                    // Play a happy melody: Do-Mi-Sol
-                    playNote(ctx, 262, 0.1); // Do
-                    setTimeout(() => playNote(ctx, 330, 0.1), 80); // Mi
-                    setTimeout(() => playNote(ctx, 392, 0.1), 160); // Sol
-                } else if (type === 'wrong') {
-                    // Play two low notes: Do-Sol (descending)
-                    playNote(ctx, 262, 0.1);
-                    setTimeout(() => playNote(ctx, 196, 0.1), 100); // Low Sol
-                } else {
-                    playNote(ctx, 440, 0.08); // La
-                }
-            } else {
-                // Default sounds
-                const oscillator = ctx.createOscillator();
-                const gainNode = ctx.createGain();
-                oscillator.connect(gainNode);
-                gainNode.connect(ctx.destination);
-                gainNode.gain.value = 0.1;
-                oscillator.frequency.value = type === 'correct' ? 800 : type === 'wrong' ? 200 : 400;
-                oscillator.start(ctx.currentTime);
-                oscillator.stop(ctx.currentTime + 0.2);
-            }
-        } catch (e) {}
-    }
-
-    function playNote(ctx, frequency, duration) {
-        try {
             const oscillator = ctx.createOscillator();
             const gainNode = ctx.createGain();
             oscillator.connect(gainNode);
             gainNode.connect(ctx.destination);
             gainNode.gain.value = 0.1;
-            oscillator.frequency.value = frequency;
+            oscillator.frequency.value = type === 'correct' ? 800 : type === 'wrong' ? 200 : 400;
             oscillator.start(ctx.currentTime);
-            oscillator.stop(ctx.currentTime + duration);
+            oscillator.stop(ctx.currentTime + 0.2);
         } catch (e) {}
     }
 
@@ -848,10 +797,20 @@ document.addEventListener('DOMContentLoaded', () => {
         score++;
         correctStreak = Math.min(questionsCompleted, maxStars);
         scoreEl.textContent = `Счёт: ${score}`;
-        feedbackEl.textContent = 'Правильно!';
+        if (bonusCoinsArmed) {
+            bonusCoinsArmed = false;
+            coins += 5;
+            localStorage.setItem('coins', String(coins));
+            updateCoinsBadge();
+            renderProfile();
+            feedbackEl.textContent = 'Правильно! Бонус: +5 монет.';
+        } else {
+            feedbackEl.textContent = 'Правильно!';
+        }
         feedbackEl.style.color = '#2e7d32';
         updateStars();
         updateLevelProgress();
+        renderGameAbilities();
         launchConfetti();
         playSound('correct');
 
@@ -867,9 +826,24 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleIncorrectAnswer(message) {
         if (levelComplete) return;
         clearTimer();
+        if (mistakeShieldArmed) {
+            mistakeShieldArmed = false;
+            document.querySelectorAll('.option').forEach(option => {
+                option.disabled = false;
+                option.classList.remove('wrong', 'correct');
+            });
+            russianTextInput.value = '';
+            feedbackEl.textContent = 'Щит сработал: задание пропущено без штрафа.';
+            feedbackEl.style.color = '#2e7d32';
+            renderGameAbilities();
+            playSound('correct');
+            transitionTimeout = setTimeout(generateQuestion, 1000);
+            return;
+        }
         levelMistakes++;
         feedbackEl.textContent = message;
         feedbackEl.style.color = '#c62828';
+        renderGameAbilities();
         playSound('wrong');
         transitionTimeout = setTimeout(generateQuestion, 1500);
     }
@@ -883,6 +857,10 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.classList.add('correct');
             handleCorrectAnswer();
         } else {
+            if (mistakeShieldArmed) {
+                handleIncorrectAnswer('Щит сработал: задание пропущено без штрафа.');
+                return;
+            }
             btn.classList.add('wrong');
             document.querySelectorAll('.option').forEach(option => option.disabled = true);
             document.querySelectorAll('.option').forEach(o => {
@@ -897,6 +875,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Time out
     function timeOut() {
         clearTimeout(window.russianCheckTimeout);
+        if (mistakeShieldArmed) {
+            handleIncorrectAnswer('Щит сработал: задание пропущено без штрафа.');
+            return;
+        }
         if (gameSelect.value === 'russian') {
             const mode = ruModeSelect.value;
             if (mode === 'letters') {
@@ -956,6 +938,7 @@ document.addEventListener('DOMContentLoaded', () => {
         nextBtn.style.display = 'none';
         updateLevelProgress();
         startTimer(modeSelect.value === 'sticks' ? 30 : 20);
+        renderGameAbilities();
     }
 
     // Math question
@@ -1376,6 +1359,9 @@ function checkRussianDrawing() {
         questionsCompleted = 0;
         levelMistakes = 0;
         levelComplete = false;
+        mistakeShieldArmed = false;
+        bonusStarArmed = false;
+        bonusCoinsArmed = false;
         scoreEl.textContent = `Счёт: ${score}`;
         updateStars();
         clearTimer();
@@ -1383,6 +1369,7 @@ function checkRussianDrawing() {
         russianTextInput.removeEventListener('input', validateRussianInput);
         russianTextInput.value = '';
         clearCanvas();
+        renderGameAbilities();
     }
 
     function setActiveTab(tab) {
@@ -1505,21 +1492,6 @@ function checkRussianDrawing() {
         closeShopBtn.addEventListener('click', hideShop);
     }
 
-    // Close color picker when clicking outside
-    document.addEventListener('click', (e) => {
-        const pickerContainer = document.getElementById('color-picker-container');
-        if (!pickerContainer) return;
-
-        if (pickerContainer.style.display === 'block') {
-            // Не закрываем, если клик был на самой палитре
-            if (pickerContainer.contains(e.target)) {
-                e.stopPropagation();
-                return;
-            }
-            hideColorPicker();
-        }
-    }, true);
-
     // Initialize
     initStars();
     initCanvas();
@@ -1527,19 +1499,6 @@ function checkRussianDrawing() {
     applyFreeTheme();
     renderLevelMap();
     setMapSubject(selectedMapSubject);
-    // Apply active items on load
-    shopItems.forEach(item => {
-        if (activeItems[item.id]) {
-            if (item.id === 'item1') {
-                const customBgColor = localStorage.getItem('customBgColor');
-                if (customBgColor) {
-                    document.body.style.background = `linear-gradient(135deg, ${customBgColor}, ${customBgColor})`;
-                }
-            } else {
-                applyItem(item);
-            }
-        }
-    });
     showLevels();
     if (!playerProfile.name) {
         namePrompt.style.display = 'flex';

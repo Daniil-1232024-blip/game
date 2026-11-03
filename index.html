@@ -144,6 +144,7 @@
                     </div>
                 </div>
                 <div id="question"></div>
+                <section id="game-abilities" class="game-abilities" aria-label="Игровые способности" hidden></section>
                 <div id="sticks-container" style="display:none; text-align:center; margin:20px 0;"></div>
                 <div id="russian-input-area" style="display:none; margin:20px 0;">
                     <canvas id="letterCanvas" width="300" height="300" style="width:100%; max-width:300px; aspect-ratio:1; border:3px solid #4a90e2; border-radius:15px; cursor:crosshair; display:none; touch-action:none; background:white;"></canvas>
@@ -168,13 +169,10 @@
                 <h1>🛍️ Магазин</h1>
                 <button id="closeShopBtn" class="close-shop-btn">✕</button>
             </div>
+            <p class="shop-intro">Покупай способности за монеты и используй их во время игры. Каждая покупка даёт одно применение.</p>
+            <p id="shop-feedback" class="shop-feedback" aria-live="polite"></p>
             <div id="shop-items"></div>
         </div>
-    </div>
-
-    <div id="color-picker-container" role="dialog" aria-label="Выбор цвета фона">
-        <h2>Выберите цвет фона</h2>
-        <div id="colorPicker" class="color-picker"></div>
     </div>
 
     <nav id="bottom-nav" class="bottom-nav" aria-label="Основная навигация" style="display:none;">
